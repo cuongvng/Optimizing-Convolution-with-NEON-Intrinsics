@@ -135,6 +135,21 @@ class Conv2d{
             return this->grad_kernels
         }
 
+    private:
+        void _reset_accumulated_grad(){
+            // Reset grad wrt input
+            this->accumulated_grad_input = arma::zeros(this->in_height,
+                                                       this->in_width,
+                                                       this->in_channels);
+            
+            // Reset grad wrt kernels
+            this->accumulated_grad_kernels.clear();
+            this->accumulated_grad_kernels.resize(this->out_channels);
+            for (size_t k=0; k<this->out_channels; k++)
+                this->accumulated_grad_kernels[k] = arma::zeros(this->kernel_height,
+                                                                this->kernel_width,
+                                                                this->in_channels);
+        }
 }
 
 #undef DEBUG
