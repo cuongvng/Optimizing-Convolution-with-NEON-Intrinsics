@@ -13,51 +13,51 @@
 class Conv2d{
     private:
         size_t in_height;
-        size_t inWidth;
-        size_t inChannels;
-        size_t outChannels;
-        size_t kernelHeight;
-        size_t kernelWidth;
-        size_t horizontalStride;
-        size_t verticalStride;
+        size_t in_width;
+        size_t in_channels;
+        size_t out_channels;
+        size_t kernel_height;
+        size_t kernel_width;
+        size_t horiz_stride;
+        size_t vertical_stride;
 
         std::vector<arma::cube> kernels;
         arma::cube input;
         arma::cube output;
-        arma::cube gradInput;
-        arma::cube accumulatedGradInput;
-        std::vector<arma::cube> gradKernels;
-        std::vector<arma::cube> accumulatedGradKernels;
+        arma::cube grad_input;
+        arma::cube accumulated_grad_input;
+        std::vector<arma::cube> grad_kernels;
+        std::vector<arma::cube> accumulated_grad_kernels;
 
     public:
-        Conv2d(size_t inHeight, size_t inWidth, size_t inChannels, 
-            size_t kernelHeight, size_t kernelWidth, size_t outChannels,
-            size_t horizontalStride, size_t verticalStride):{
+        Conv2d(size_t in_height, size_t in_width, size_t in_channels, 
+            size_t kernel_height, size_t kernel_width, size_t out_channels,
+            size_t horiz_stride, size_t vertical_stride):{
             // Initialize kernels
-            for(int k=0; k<outChannels; k++)
-                this->kernels.push_back(arma::zeros(kernelHeight, kernelWidth));
+            for(size_t k=0; k<out_channels; k++)
+                this->kernels.push_back(arma::zeros(kernel_height, kernel_width));
 
             // Clean up gradient
             this->_zero_grad();
         }
 
         arma::cube& forward(arma::cube& input){
-            assert((in_height - kernelHeight) % verticalStride == 0);
-            assert((inWidth - kernelWidth) % horizontalStride == 0);
+            assert((in_height - kernel_height) % vertical_stride == 0);
+            assert((in_width - kernel_width) % horiz_stride == 0);
 
             // Initialize output
             output = arma::zeros(
-                n_rows = (inHeight - kernelHeight)/verticalStride + 1,
-                n_cols = (inWidth - kernelWidth)/horizontalStride + 1,
-                n_slices = outChannels
+                n_rows = (in_height - kernel_height)/vertical_stride + 1,
+                n_cols = (in_width - kernel_width)/horiz_stride + 1,
+                n_slices = out_channels
             );
 
             // Perform the convolutional operation
-            for(int k=0; k<outChannels; k++){
-                for (int i=0; i<inHeight-kernelHeight+1; i+=verticalStride)
-                    for (int j=0; j<inWidth-kernelWidth+1; j+=horizontalStride)
-                        output(i/verticalStride, j/horizontalStride, k) = arma::dot(
-                            arma::vectorise(input.subcube(i, j, 0, i+kernelHeight-1, j+kernelWidth-1, outChannels-1))),
+            for(size_t k=0; k<out_channels; k++){
+                for (size_t i=0; i<in_height-kernel_height+1; i+=vertical_stride)
+                    for (size_t j=0; j<in_width-kernel_width+1; j+=horiz_stride)
+                        output(i/vertical_stride, j/horiz_stride, k) = arma::dot(
+                            arma::vectorise(input.subcube(i, j, 0, i+kernel_height-1, j+kernel_width-1, out_channels-1))),
                             arma::vectorise(this->kernels[k]);
             }
             this->input = input;
@@ -66,7 +66,6 @@ class Conv2d{
         }
 
         void backward(arma::cube& gradient){
-            
         }
     
     private:
