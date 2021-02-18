@@ -119,6 +119,22 @@ class Conv2d{
             this->_reset_accumulated_grad();
         }
 
+        void set_kernels(std::vector<arma::cube> kernels){
+            this->kernels = kernels;
+        }
+
+        std::vector<arma::cube> get_kernels(){
+            return this->kernels;
+        }
+
+        arma::cube get_grad_wrt_input(){
+            return this->grad_input;
+        }
+
+        std::vector<arma::cube> get_grad_wrt_kernels(){
+            return this->grad_kernels
+        }
+
 }
 
 #undef DEBUG
