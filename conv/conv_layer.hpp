@@ -33,11 +33,14 @@ class Conv2d{
         Conv2d(size_t in_height, size_t in_width, size_t in_channels, 
             size_t kernel_height, size_t kernel_width, size_t out_channels,
             size_t horiz_stride, size_t vertical_stride):{
-            // Initialize kernels
-            for (size_t k=0; k<this->out_channels; k++)
-                this->kernels.push_back(arma::zeros(kernel_height, kernel_width, in_channels));
 
-            // Clean up gradient
+            // Initialize kernels
+            this-kernels.resize(out_channels);
+            for (size_t k=0; k<out_channels; k++){
+                this->kernels[k] = arma::zeros(kernel_height, kernel_width, in_channels);
+                this->kernels[k].imbue( [&](){ return this->_get_truncated_normal_value(0.0, 1.0); } );
+            }
+            
             this->_reset_accumulated_grad();
         }
 
@@ -108,7 +111,7 @@ class Conv2d{
                     }
             
             for (size_t k=0; k<this->out_channels; k++)
-                this->accumulated_grad_kernels[k] += this->grad_kernels[k]
+                this->accumulated_grad_kernels[k] += this->grad_kernels[k];
 
         }
 
@@ -132,7 +135,7 @@ class Conv2d{
         }
 
         std::vector<arma::cube> get_grad_wrt_kernels(){
-            return this->grad_kernels
+            return this->grad_kernels;
         }
 
     private:
@@ -149,6 +152,14 @@ class Conv2d{
                 this->accumulated_grad_kernels[k] = arma::zeros(this->kernel_height,
                                                                 this->kernel_width,
                                                                 this->in_channels);
+        }
+
+        double _get_truncated_normal_value(double mean, double var){
+            double std = sqrt(var);
+            arma::mat m = {3 * std};
+            while (std::abs(m[0] - mean) > 2 * std)
+                m.randn(1, 1);
+            return m[0];
         }
 }
 
