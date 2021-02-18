@@ -112,11 +112,13 @@ class Conv2d{
 
         }
 
-    private:
-        void _reset_accumulated_grad(){
-            this->accumulated_grad_kernels.clear();
+        void update_kernels(size_t batch_size, double lr){
+            for (size_t k=0; k<this->out_channels; k++)
+                this->kernels[k] -= lr * (this->accumulated_grad_kernels[k]/batch_size);
 
+            this->_reset_accumulated_grad();
         }
+
 }
 
 #undef DEBUG
