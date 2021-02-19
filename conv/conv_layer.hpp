@@ -32,27 +32,35 @@ class Conv2d{
     public:
         Conv2d(size_t in_height, size_t in_width, size_t in_channels, 
             size_t kernel_height, size_t kernel_width, size_t out_channels,
-            size_t horiz_stride, size_t vertical_stride):{
-
+            size_t horiz_stride, size_t vertical_stride):
+            in_height(in_height),
+            in_width(in_width),
+            in_channels(in_channels),
+            out_channels(out_channels),
+            kernel_height(kernel_height),
+            kernel_width(kernel_width),
+            horiz_stride(horiz_stride),
+            vertical_stride(vertical_stride)
+        {
             // Initialize kernels
-            this-kernels.resize(out_channels);
+            this->kernels.resize(out_channels);
             for (size_t k=0; k<out_channels; k++){
                 this->kernels[k] = arma::zeros(kernel_height, kernel_width, in_channels);
                 this->kernels[k].imbue( [&](){ return this->_get_truncated_normal_value(0.0, 1.0); } );
             }
-            
+
             this->_reset_accumulated_grad();
         }
 
-        arma::cube& forward(arma::cube& input){
+        arma::cube forward(arma::cube& input){
             assert((this->in_height - this->kernel_height) % this->vertical_stride == 0);
             assert((this->in_width - this->kernel_width) % this->horiz_stride == 0);
 
             // Initialize output
             output = arma::zeros(
-                n_rows = (this->in_height - this->kernel_height)/this->vertical_stride + 1,
-                n_cols = (this->in_width - this->kernel_width)/this->horiz_stride + 1,
-                n_slices = this->out_channels
+                (this->in_height - this->kernel_height)/this->vertical_stride + 1,
+                (this->in_width - this->kernel_width)/this->horiz_stride + 1,
+                this->out_channels
             );
 
             // Perform the convolutional operation
@@ -60,8 +68,9 @@ class Conv2d{
                 for (size_t i=0; i<this->in_height-this->kernel_height+1; i+=this->vertical_stride)
                     for (size_t j=0; j<this->in_width-this->kernel_width+1; j+=this->horiz_stride)
                         output(i/this->vertical_stride, j/this->horiz_stride, k) = arma::dot(
-                            arma::vectorise(input.subcube(i, j, 0, i+this->kernel_height-1, j+this->kernel_width-1, this->in_channels-1))),
-                            arma::vectorise(this->kernels[k]);
+                            arma::vectorise(input.subcube(i, j, 0, 
+                                                          i+this->kernel_height-1, j+this->kernel_width-1, this->in_channels-1)),
+                            arma::vectorise(this->kernels[k]));
             }
             this->input = input;
             return output;
@@ -69,13 +78,13 @@ class Conv2d{
 
         void backward(arma::cube& upstream_gradient, arma::cube& output){
             // Initialize input gradient
-            this->grad_input = arma::zeros(arma::size(input))
+            this->grad_input = arma::zeros(arma::size(input));
 
             // Compute gradient wrt input
             for (size_t k=0; k<this->out_channels; k++)
                 for (size_t i=0; i<output.n_rows; i++)
                     for (size_t j=0; j<output.n_cols; j++){
-                        arma::cube tmp(arma::size(input), arma::fill:zeros);
+                        arma::cube tmp(arma::size(input), arma::fill::zeros);
                         tmp.subcube(i*this->vertical_stride, 
                                     j*this->horiz_stride, 
                                     0,
@@ -99,7 +108,7 @@ class Conv2d{
             for (size_t k=0; k<this->out_channels; k++)
                 for (size_t i=0; i<output.n_rows; i++)
                     for (size_t j=0; j<output.n_cols; j++){
-                        arma::cube tmp(arma::size(kernels[k], arma::fill:zeros));
+                        arma::cube tmp(arma::size(kernels[k]), arma::fill::zeros);
                         tmp = this->input.subcube(i*this->vertical_stride, 
                                                   j*this->horiz_stride, 
                                                   0,
@@ -161,7 +170,8 @@ class Conv2d{
                 m.randn(1, 1);
             return m[0];
         }
-}
+};
 
 #undef DEBUG
 #undef DEBUG_PREFIX
+#endif
