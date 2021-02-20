@@ -45,8 +45,7 @@ class Conv2d{
             // Initialize kernels
             this->kernels.resize(out_channels);
             for (size_t k=0; k<out_channels; k++){
-                this->kernels[k] = arma::zeros(kernel_height, kernel_width, in_channels);
-                this->kernels[k].imbue( [&](){ return this->_get_truncated_normal_value(0.0, 1.0); } );
+                this->kernels[k] = arma::ones(kernel_height, kernel_width, in_channels);
             }
 
             this->_reset_accumulated_grad();
