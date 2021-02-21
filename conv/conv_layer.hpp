@@ -2,13 +2,19 @@
 
 using namespace std;
 
-// 1D convolution function.
-vector<vector<double>>& convolute(vector<vector<double>> input, vector<vector<double>> kernel)
+// Single-output 3D convolution function.
+vector<vector<double>>& convolute(
+    vector<vector<vector<double>>> input, 
+    vector<vector<vector<double>>> kernel
+    )
 {   
-    int input_height = input.size();
-    int input_width = input[0].size();
-    int kernel_height = kernel.size();
-    int kernel_width = kernel[0].size();
+    // Input shape (channels, height, width)
+    // Kernel shape (channels, height, width)
+
+    int input_height = input[0].size();
+    int input_width = input[1].size();
+    int kernel_height = kernel[0].size();
+    int kernel_width = kernel[1].size();
 
     int output_height = input_height - kernel_height + 1;
     int output_width = input_width - kernel_width + 1;
@@ -23,11 +29,11 @@ vector<vector<double>>& convolute(vector<vector<double>> input, vector<vector<do
     for (int i=0; i<output_height; i++){
         for (int j=0; j<output_width; j++){
 
-            for (int k=0; k<kernel_height; k++){
-                for (int l=0; l<kernel_width; l++){
-                    convolute += input[i+k][j+l] * kernel[k][l];
-                }
-            }
+            for (int k=0; k<kernel_height; k++)
+                for (int l=0; l<kernel_width; l++)
+                    for (int c=0; c<input.size(); c++)
+                        convolute += input[c][i+k][j+l] * kernel[c][k][l];
+            
             output[i][j] = convolute;
             convolute = 0;
         }
