@@ -1,7 +1,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-#include "../include/conv_layer.hpp"
+#include "../include/convolution.hpp"
 #include <iostream>
 
 using namespace std;
