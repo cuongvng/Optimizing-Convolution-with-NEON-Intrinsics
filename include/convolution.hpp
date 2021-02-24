@@ -51,6 +51,39 @@ vector<vector<double>>& convolve(
     return output;
 }
 
+
+vector<vector<uint8_t>> convolve_neon(vector<vector<uint8_t>> input, vector<vector<uint8_t>> kernel){
+    // Simple single-channel convolution
+    clock_t start = clock();
+
+    uint32_t input_height = input.size();
+    uint32_t input_width = input[0].size();
+
+    uint32_t output_height = input_height - KERNEL_HEIGHT + 1;
+    uint32_t output_width = input_width - KERNEL_WIDTH + 1;
+
+    // Flatten the kernel, row-major
+    uint8_t* kernel_data = flatten_kernel(kernel);
+
+    uint8_t input_window[KERNEL_HEIGHT*KERNEL_WIDTH];
+    for (uint32_t i=0; i<input_height; i++)
+        for (uint32_t j=0; j<input_width; j++){
+
+            // Get data on input window
+            int i=0;
+            int j=0;
+            for (uint32_t kh=0; kh<KERNEL_HEIGHT; kh++)
+                for(uint32_t kw=0; kw<KERNEL_WIDTH; kw++)
+                    input_window[kh*KERNEL_WIDTH + kw] = input[i+kh][j+kw];
+
+        }
+
+    clock_t duration = clock() - start;
+    cout << "Time consumed: " << float(duration)/CLOCKS_PER_SEC;
+    
+    return vector<vector<uint8_t>>{};
+}
+
 uint8_t* flatten_kernel(vector<vector<uint8_t>> kernel){
     static uint8_t flattened_kernel[KERNEL_HEIGHT*KERNEL_WIDTH];
     
