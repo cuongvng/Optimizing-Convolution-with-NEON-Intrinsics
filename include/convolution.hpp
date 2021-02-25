@@ -6,11 +6,6 @@
 
 using namespace std;
 
-enum{
-    KERNEL_HEIGHT=3,
-    KERNEL_WIDTH=3
-};
-
 // Single-output 3D convolution function.
 vector<vector<double>>& convolve(
     vector<vector<vector<double>>> input, 
@@ -51,7 +46,7 @@ vector<vector<double>>& convolve(
     return output;
 }
 
-float32_t* flatten_kernel(vector<vector<float32_t>> kernel);
+float32_t* flatten_kernel(vector<vector<float32_t>> kernel, const uint32_t &kernel_height, const uint32_t &kernel_width);
 
 vector<vector<float32_t>> convolve_neon(vector<vector<float32_t>> input, vector<vector<float32_t>> kernel){
     // Simple single-channel convolution
@@ -60,15 +55,27 @@ vector<vector<float32_t>> convolve_neon(vector<vector<float32_t>> input, vector<
     uint32_t input_height = input.size();
     uint32_t input_width = input[0].size();
 
+    // Flatten the kernel, row-major
+    const uint32_t KERNEL_HEIGHT = kernel.size();
+    const uint32_t KERNEL_WIDTH = kernel[0].size();
+    const uint32_t N_KERNEL_PIX = kernel.size() * kernel[0].size();
+
+    float32_t kernel_data[N_KERNEL_PIX];
+    for (uint8_t r=0; r<KERNEL_HEIGHT; r++){
+        float32_t* kernel_row = kernel[r].data();
+        for (uint8_t c=0; c<KERNEL_WIDTH; c++){
+            kernel_data[r*KERNEL_WIDTH + c] = *(kernel_row+c);
+        }
+    }
+
+    // Get output shape
     uint32_t output_height = input_height - KERNEL_HEIGHT + 1;
     uint32_t output_width = input_width - KERNEL_WIDTH + 1;
-
     vector<vector<float32_t>> result;
 
-    // Flatten the kernel, row-major
-    float32_t* kernel_data = flatten_kernel(kernel);
+    // Array to store the data of sliding window on the input
+    float32_t input_window[N_KERNEL_PIX];
 
-    float32_t input_window[KERNEL_HEIGHT*KERNEL_WIDTH];
     for (uint32_t i=0; i<output_height; i++){
         vector<float32_t> res_row;
         for (uint32_t j=0; j<output_width; j++){
@@ -80,33 +87,29 @@ vector<vector<float32_t>> convolve_neon(vector<vector<float32_t>> input, vector<
                     input_window[kh*KERNEL_WIDTH + kw] = input[i+kh][j+kw];
 
             /**** Apply NEON Intrinsics ****/
-            // For 3x3 kernel, load 2 four-element blocks out of 9 elements in the kernel and input array to ARM registers
-            // to perform multiplication on registers (expected to be faster!)
-            // The last elements will be handled separately.
 
-            float32x4_t input_reg1 = vld1q_f32(input_window);
-            float32x4_t kernel_reg1 = vld1q_f32(kernel_data);
-            float32x4_t input_reg2 = vld1q_f32(input_window+4);
-            float32x4_t kernel_reg2 = vld1q_f32(kernel_data+4);
+            for (uint32_t block4_idx=0; block4_idx<N_KERNEL_PIX/4; block4_idx++){
+                // Load each pair of 4-element blocks of input and kernel into ARM registers
+                float32x4_t input_reg = vld1q_f32(input_window + 4*block4_idx);
+                float32x4_t kernel_reg = vld1q_f32(kernel_data + 4*block4_idx);
 
-            float32_t input_last = input_window[8];
-            float32_t kernel_last = kernel_data[8];
+                // Perform element-wise multiplication on the registers
+                float32x4_t ew_mul_reg = vmulq_f32(input_reg, kernel_reg);
 
-            // Element-wise multiplication of `input_reg` and `kernel_reg`
-            float32x4_t ew_mul_reg1 = vmulq_f32(input_reg1, kernel_reg1);
-            float32x4_t ew_mul_reg2 = vmulq_f32(input_reg2, kernel_reg2);
+                // Load `ew_mul_reg` result from the registers back to the 4-element array `ew_mul_mem` on memory
+                float32_t ew_mul_mem[4];
+                vst1q_f32(ew_mul_mem, ew_mul_reg);
 
-            // Load `ew_mul_reg` from register back to memory
-            float32_t ew_mul_mem1[4];
-            float32_t ew_mul_mem2[4];
-            vst1q_f32(ew_mul_mem1, ew_mul_reg1);
-            vst1q_f32(ew_mul_mem2, ew_mul_reg2);
+                // Accumulate the convolution results on the current block pairs
+                for (uint8_t m=0; m<4; m++)
+                    conv += ew_mul_mem[m];
+            }
 
-            for (uint8_t m=0; m<4; m++)
-                conv += ew_mul_mem1[m] + ew_mul_mem2[m];
-            
-            // Add the result of the last element
-            conv += input_last * kernel_last;
+            // Handle the rest (N_KERNEL_PIX % 4) elements separately
+            uint8_t n_rest = N_KERNEL_PIX % 4;
+            if (n_rest > 0)
+                for (uint8_t l=0; l<n_rest; l++)
+                    conv += input_window [N_KERNEL_PIX - N_KERNEL_PIX%4 +l] * kernel_data[N_KERNEL_PIX - N_KERNEL_PIX%4 +l];
 
             res_row.push_back(conv);
         }
@@ -119,13 +122,13 @@ vector<vector<float32_t>> convolve_neon(vector<vector<float32_t>> input, vector<
     return result;
 }
 
-float32_t* flatten_kernel(vector<vector<float32_t>> kernel){
-    static float32_t flattened_kernel[KERNEL_HEIGHT*KERNEL_WIDTH];
+float32_t* flatten_kernel(vector<vector<float32_t>> kernel, const uint32_t &kernel_height, const uint32_t &kernel_width){
+    static float32_t* flattened_kernel = new float32_t[kernel_height * kernel_width];
     
-    for (uint8_t r=0; r<KERNEL_HEIGHT; r++){
+    for (uint8_t r=0; r<kernel_height; r++){
         float32_t* kernel_row = kernel[r].data();
-        for (uint8_t c=0; c<KERNEL_WIDTH; c++){
-            flattened_kernel[r*KERNEL_WIDTH + c] = *(kernel_row+c);
+        for (uint8_t c=0; c<kernel_width; c++){
+            flattened_kernel[r*kernel_width + c] = *(kernel_row+c);
         }
     }
     return flattened_kernel;
