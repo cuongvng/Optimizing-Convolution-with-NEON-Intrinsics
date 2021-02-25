@@ -1,6 +1,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+#include "../include/convolution_neon.hpp"
 #include "../include/convolution.hpp"
 #include <iostream>
 
