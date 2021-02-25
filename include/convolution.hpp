@@ -51,8 +51,9 @@ vector<vector<double>>& convolve(
     return output;
 }
 
+float32_t* flatten_kernel(vector<vector<float32_t>> kernel);
 
-vector<vector<uint8_t>> convolve_neon(vector<vector<uint8_t>> input, vector<vector<uint8_t>> kernel){
+float32_t** convolve_neon(vector<vector<float32_t>> input, vector<vector<float32_t>> kernel){
     // Simple single-channel convolution
     clock_t start = clock();
 
@@ -62,33 +63,66 @@ vector<vector<uint8_t>> convolve_neon(vector<vector<uint8_t>> input, vector<vect
     uint32_t output_height = input_height - KERNEL_HEIGHT + 1;
     uint32_t output_width = input_width - KERNEL_WIDTH + 1;
 
-    // Flatten the kernel, row-major
-    uint8_t* kernel_data = flatten_kernel(kernel);
+    float32_t** result = new float32_t*[output_height];
 
-    uint8_t input_window[KERNEL_HEIGHT*KERNEL_WIDTH];
-    for (uint32_t i=0; i<input_height; i++)
-        for (uint32_t j=0; j<input_width; j++){
+    // Flatten the kernel, row-major
+    float32_t* kernel_data = flatten_kernel(kernel);
+
+    float32_t input_window[KERNEL_HEIGHT*KERNEL_WIDTH];
+    for (uint32_t i=0; i<output_height; i++){
+        result[i] = new float32_t[output_width];
+        for (uint32_t j=0; j<output_width; j++){
+            float32_t conv = 0;
 
             // Get data on input window
-            int i=0;
-            int j=0;
             for (uint32_t kh=0; kh<KERNEL_HEIGHT; kh++)
                 for(uint32_t kw=0; kw<KERNEL_WIDTH; kw++)
                     input_window[kh*KERNEL_WIDTH + kw] = input[i+kh][j+kw];
 
+            /**** Apply NEON Intrinsics ****/
+            // For 3x3 kernel, load 2 four-element blocks out of 9 elements in the kernel and input array to ARM registers
+            // to perform multiplication on registers (expected to be faster!)
+            // The last elements will be handled separately.
+
+            float32x4_t input_reg1 = vld1q_f32(input_window);
+            float32x4_t kernel_reg1 = vld1q_f32(kernel_data);
+            float32x4_t input_reg2 = vld1q_f32(input_window+4);
+            float32x4_t kernel_reg2 = vld1q_f32(kernel_data+4);
+
+            float32_t input_last = input_window[8];
+            float32_t kernel_last = kernel_data[8];
+
+            // Element-wise multiplication of `input_reg` and `kernel_reg`
+            float32x4_t ew_mul_reg1 = vmulq_f32(input_reg1, kernel_reg1);
+            float32x4_t ew_mul_reg2 = vmulq_f32(input_reg2, kernel_reg2);
+
+            // Load `ew_mul_reg` from register back to memory
+            float32_t ew_mul_mem1[4];
+            float32_t ew_mul_mem2[4];
+            vst1q_f32(ew_mul_mem1, ew_mul_reg1);
+            vst1q_f32(ew_mul_mem2, ew_mul_reg2);
+
+            for (uint8_t m=0; m<4; m++)
+                conv += ew_mul_mem1[m] + ew_mul_mem2[m];
+            
+            // Add the result of the last element
+            conv += input_last * kernel_last;
+
+            result[i][j] = conv;            
         }
+    }
 
     clock_t duration = clock() - start;
-    cout << "Time consumed: " << float(duration)/CLOCKS_PER_SEC;
+    cout << "Time consumed: " << float(duration)/CLOCKS_PER_SEC << endl;
     
-    return vector<vector<uint8_t>>{};
+    return result;
 }
 
-uint8_t* flatten_kernel(vector<vector<uint8_t>> kernel){
-    static uint8_t flattened_kernel[KERNEL_HEIGHT*KERNEL_WIDTH];
+float32_t* flatten_kernel(vector<vector<float32_t>> kernel){
+    static float32_t flattened_kernel[KERNEL_HEIGHT*KERNEL_WIDTH];
     
     for (uint8_t r=0; r<KERNEL_HEIGHT; r++){
-        uint8_t* kernel_row = kernel[r].data();
+        float32_t* kernel_row = kernel[r].data();
         for (uint8_t c=0; c<KERNEL_WIDTH; c++){
             flattened_kernel[r*KERNEL_WIDTH + c] = *(kernel_row+c);
         }
