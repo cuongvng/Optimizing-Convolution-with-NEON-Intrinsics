@@ -53,7 +53,7 @@ vector<vector<double>>& convolve(
 
 float32_t* flatten_kernel(vector<vector<float32_t>> kernel);
 
-float32_t** convolve_neon(vector<vector<float32_t>> input, vector<vector<float32_t>> kernel){
+vector<vector<float32_t>> convolve_neon(vector<vector<float32_t>> input, vector<vector<float32_t>> kernel){
     // Simple single-channel convolution
     clock_t start = clock();
 
@@ -63,14 +63,14 @@ float32_t** convolve_neon(vector<vector<float32_t>> input, vector<vector<float32
     uint32_t output_height = input_height - KERNEL_HEIGHT + 1;
     uint32_t output_width = input_width - KERNEL_WIDTH + 1;
 
-    float32_t** result = new float32_t*[output_height];
+    vector<vector<float32_t>> result;
 
     // Flatten the kernel, row-major
     float32_t* kernel_data = flatten_kernel(kernel);
 
     float32_t input_window[KERNEL_HEIGHT*KERNEL_WIDTH];
     for (uint32_t i=0; i<output_height; i++){
-        result[i] = new float32_t[output_width];
+        vector<float32_t> res_row;
         for (uint32_t j=0; j<output_width; j++){
             float32_t conv = 0;
 
@@ -108,8 +108,9 @@ float32_t** convolve_neon(vector<vector<float32_t>> input, vector<vector<float32
             // Add the result of the last element
             conv += input_last * kernel_last;
 
-            result[i][j] = conv;            
+            res_row.push_back(conv);
         }
+        result.push_back(res_row);
     }
 
     clock_t duration = clock() - start;
