@@ -6,7 +6,7 @@
 
 using namespace std;
 
-vector<vector<float32_t>> convolve_neon(vector<vector<float32_t>> input, vector<vector<float32_t>> kernel){
+vector<vector<float32_t>> simply_convolve_neon(vector<vector<float32_t>> input, vector<vector<float32_t>> kernel){
     // Simple single-channel convolution
     clock_t start = clock();
 
@@ -75,7 +75,7 @@ vector<vector<float32_t>> convolve_neon(vector<vector<float32_t>> input, vector<
     }
 
     clock_t duration = clock() - start;
-    cout << "Time consumed: " << float(duration)/CLOCKS_PER_SEC << endl;
+    cout << "NEON convolution: time consumed = " << float(duration)*1e6/CLOCKS_PER_SEC << " us" << endl;
     
     return result;
 }
