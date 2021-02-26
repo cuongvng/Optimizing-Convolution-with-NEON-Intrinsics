@@ -1,6 +1,6 @@
 #include <iostream>
 #include<vector>
-#include "../include/NEON_2_SSE.h"
+#include "../include/neon2sse/NEON_2_SSE.h"  // Replace this include by the following to test on REAL ARM machines.
 // #include <arm_neon.h>
 #include <time.h>
 
