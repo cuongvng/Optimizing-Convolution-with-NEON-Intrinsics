@@ -4,54 +4,53 @@
 #include "../include/convolution_neon.hpp"
 #include "../include/convolution.hpp"
 #include <iostream>
-
-using namespace std;
+#include <vector>
 
 void test1(){
-  cout << "--------- TEST 1 -----------" << endl;
+  std::cout << "--------- TEST 1 -----------" << std::endl;
   // Small size input
-  vector<vector<float32_t>> input({
+  std::vector<std::vector<float32_t>> input({
     {65,66,67,65,40}, 
     {68,69,70,68,40}, 
     {71,72,73, 71,40}, 
     {74,75,76,74,40}});
-  vector<vector<float32_t>> kernel({
+  std::vector<std::vector<float32_t>> kernel({
     {65,66,67}, 
     {68,69,70}, 
     {71,72,73}});
 
-  cout << "None-NEON results:" << endl;
-  vector<vector<float32_t>> non_neon = simply_convolve(input, kernel);
+  std::vector<std::vector<float32_t>> non_neon = simply_convolve(input, kernel);
+  std::cout << "None-NEON output:" << std::endl;
   for (int i=0; i<non_neon.size(); i++){
     for (int j=0; j<non_neon[0].size(); j++)
-      cout << non_neon[i][j] << '\t';
-    cout << endl;
+      std::cout << non_neon[i][j] << '\t';
+    std::cout << std::endl;
   }
 
-  cout << "NEON results:" << endl;
-  vector<vector<float32_t>> neon = simply_convolve_neon(input, kernel);
+  std::vector<std::vector<float32_t>> neon = simply_convolve_neon(input, kernel);
+  std::cout << "NEON output:" << std::endl;
   for (int i=0; i<neon.size(); i++){
     for (int j=0; j<neon[0].size(); j++)
-      cout << neon[i][j] << '\t';
-    cout << endl;
+      std::cout << neon[i][j] << '\t';
+    std::cout << std::endl;
   }
 
 }
 
 void test2(){
-  cout << endl << "--------- TEST 2 -----------" << endl;
+  std::cout << std::endl << "--------- TEST 2 -----------" << std::endl;
   // Big-size input of 0s (10000 x 5000), just compare running time.
-  vector<vector<float32_t>> input{}; // 10000 x 5000
-  vector<vector<float32_t>> kernel{}; // 11x9
+  std::vector<std::vector<float32_t>> input{}; // 10000 x 5000
+  std::vector<std::vector<float32_t>> kernel{}; // 11x9
 
   for (int i=0; i<10000; i++)
-    input.push_back(vector<float32_t> (5000));
+    input.push_back(std::vector<float32_t> (5000));
   
   for (int i=0; i<11; i++)
-    kernel.push_back(vector<float32_t> (9));
+    kernel.push_back(std::vector<float32_t> (9));
 
-  vector<vector<float32_t>> non_neon = simply_convolve(input, kernel);
-  vector<vector<float32_t>> neon = simply_convolve_neon(input, kernel);
+  std::vector<std::vector<float32_t>> non_neon = simply_convolve(input, kernel);
+  std::vector<std::vector<float32_t>> neon = simply_convolve_neon(input, kernel);
 }
 
 int main()

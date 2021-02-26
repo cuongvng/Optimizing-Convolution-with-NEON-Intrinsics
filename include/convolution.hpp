@@ -1,13 +1,11 @@
 #include <iostream>
-#include<vector>
+#include <vector>
 #include <time.h>
 
-using namespace std;
-
 // Simple convolution function.
-vector<vector<float32_t>> simply_convolve(
-    vector<vector<float32_t>> input, 
-    vector<vector<float32_t>> kernel){  
+std::vector<std::vector<float32_t>> simply_convolve(
+    std::vector<std::vector<float32_t>> input, 
+    std::vector<std::vector<float32_t>> kernel){  
     // Input shape (input_height, input_width)
     // Kernel shape (kernel_height, kernel_width)
 
@@ -21,9 +19,9 @@ vector<vector<float32_t>> simply_convolve(
     int output_height = input_height - kernel_height + 1;
     int output_width = input_width - kernel_width + 1;
 
-    vector<vector<float32_t>> output;
+    std::vector<std::vector<float32_t>> output;
     for (int i=0; i<output_height; i++)
-        output.push_back(vector<float32_t> (output_width, 0.0));
+        output.push_back(std::vector<float32_t> (output_width, 0.0));
 
     float32_t conv = 0;
 
@@ -41,15 +39,15 @@ vector<vector<float32_t>> simply_convolve(
     }
 
     clock_t duration = clock() - start;
-    cout << "None-NEON convolution: time consumed = " << float(duration)*1e6/CLOCKS_PER_SEC << " us" << endl;
+    std::cout << "None-NEON convolution: time consumed = " << float(duration)*1e6/CLOCKS_PER_SEC << " us" << std::endl;
 
     return output;
 }
 
 // Single-channel 3D convolution function.
-vector<vector<float32_t>>& convolve(
-    vector<vector<vector<float32_t>>> input, 
-    vector<vector<vector<float32_t>>> kernel){   
+std::vector<std::vector<float32_t>>& convolve(
+    std::vector<std::vector<std::vector<float32_t>>> input, 
+    std::vector<std::vector<std::vector<float32_t>>> kernel){   
     // Input shape (channels, height, width)
     // Kernel shape (channels, height, width)
 
@@ -61,9 +59,9 @@ vector<vector<float32_t>>& convolve(
     int output_height = input_height - kernel_height + 1;
     int output_width = input_width - kernel_width + 1;
 
-    static vector<vector<float32_t>> output;
+    static std::vector<std::vector<float32_t>> output;
     for (int i=0; i<output_height; i++)
-        output.push_back(vector<float32_t> (output_width, 0.0));
+        output.push_back(std::vector<float32_t> (output_width, 0.0));
 
     float32_t res = 0; // This holds the convolution results for an index.
 

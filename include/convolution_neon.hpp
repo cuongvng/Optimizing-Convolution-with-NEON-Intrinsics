@@ -1,12 +1,11 @@
 #include <iostream>
-#include<vector>
+#include <vector>
 #include "../include/neon2sse/NEON_2_SSE.h"  // Replace this include by the following to test on REAL ARM machines.
 // #include <arm_neon.h>
 #include <time.h>
 
-using namespace std;
 
-vector<vector<float32_t>> simply_convolve_neon(vector<vector<float32_t>> input, vector<vector<float32_t>> kernel){
+std::vector<std::vector<float32_t>> simply_convolve_neon(std::vector<std::vector<float32_t>> input, std::vector<std::vector<float32_t>> kernel){
     // Simple single-channel convolution
     clock_t start = clock();
 
@@ -29,13 +28,13 @@ vector<vector<float32_t>> simply_convolve_neon(vector<vector<float32_t>> input, 
     // Get output shape
     uint32_t output_height = input_height - KERNEL_HEIGHT + 1;
     uint32_t output_width = input_width - KERNEL_WIDTH + 1;
-    vector<vector<float32_t>> result;
+    std::vector<std::vector<float32_t>> result;
 
     // Array to store the data of sliding window on the input
     float32_t input_window[N_KERNEL_PIX];
 
     for (uint32_t i=0; i<output_height; i++){
-        vector<float32_t> res_row;
+        std::vector<float32_t> res_row;
         for (uint32_t j=0; j<output_width; j++){
             float32_t conv = 0;
 
@@ -75,7 +74,7 @@ vector<vector<float32_t>> simply_convolve_neon(vector<vector<float32_t>> input, 
     }
 
     clock_t duration = clock() - start;
-    cout << "NEON convolution: time consumed = " << float(duration)*1e6/CLOCKS_PER_SEC << " us" << endl;
+    std::cout << "NEON convolution: time consumed = " << float(duration)*1e6/CLOCKS_PER_SEC << " us" << std::endl;
     
     return result;
 }
