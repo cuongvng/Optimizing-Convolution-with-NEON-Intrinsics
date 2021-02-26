@@ -7,10 +7,18 @@
 
 using namespace std;
 
-int main()
-{
-  vector<vector<float32_t>> input({{65,66,67, 65, 40}, {68,69,70, 68, 40}, {71,72,73, 71, 40}, {74,75,76,74, 40}});
-  vector<vector<float32_t>> kernel({{65,66,67}, {68,69,70}, {71,72,73}});
+void test1(){
+  cout << "--------- TEST 1 -----------" << endl;
+  // Small size input
+  vector<vector<float32_t>> input({
+    {65,66,67,65,40}, 
+    {68,69,70,68,40}, 
+    {71,72,73, 71,40}, 
+    {74,75,76,74,40}});
+  vector<vector<float32_t>> kernel({
+    {65,66,67}, 
+    {68,69,70}, 
+    {71,72,73}});
 
   cout << "None-NEON results:" << endl;
   vector<vector<float32_t>> non_neon = simply_convolve(input, kernel);
@@ -27,6 +35,29 @@ int main()
       cout << neon[i][j] << '\t';
     cout << endl;
   }
+
+}
+
+void test2(){
+  cout << endl << "--------- TEST 2 -----------" << endl;
+  // Big-size input of 0s (10000 x 5000), just compare running time.
+  vector<vector<float32_t>> input{}; // 10000 x 5000
+  vector<vector<float32_t>> kernel{}; // 11x9
+
+  for (int i=0; i<10000; i++)
+    input.push_back(vector<float32_t> (5000));
+  
+  for (int i=0; i<11; i++)
+    kernel.push_back(vector<float32_t> (9));
+
+  vector<vector<float32_t>> non_neon = simply_convolve(input, kernel);
+  vector<vector<float32_t>> neon = simply_convolve_neon(input, kernel);
+}
+
+int main()
+{
+  test1();
+  test2();
 }
 
 
