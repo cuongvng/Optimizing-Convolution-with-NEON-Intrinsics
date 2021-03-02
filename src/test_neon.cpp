@@ -11,6 +11,7 @@ void naive_add(uint8_t* res, uint8_t* a, uint8_t* b);
 
 enum{
     ARRAY_SIZE=100000,
+    BLOCK_SIZE=8,
     N_CALLS = 10000
 };
 
@@ -25,7 +26,7 @@ int main()
         a[i] = rand();
         b[i] = rand();
     }
-    
+
     /*** NAIVE ***/
     auto start = std::chrono::steady_clock::now();
     
@@ -59,14 +60,14 @@ int main()
 }
 
 void neon_add(uint8_t* res, uint8_t* a, uint8_t* b){
-    for (uint32_t block16_idx=0; block16_idx<ARRAY_SIZE/16; block16_idx+=16){
-        uint8x16_t block_a = vld1q_u8(a + block16_idx);
-        uint8x16_t block_b = vld1q_u8(b + block16_idx);
-        uint8x16_t block_res = vaddq_u8(block_a, block_b);   
-        vst1q_u8(&(res[block16_idx]), block_res);
+    for (uint32_t blockidx=0; blockidx<ARRAY_SIZE/BLOCK_SIZE; blockidx+=BLOCK_SIZE){
+        uint8x8_t block_a = vld1_u8(a + blockidx);
+        uint8x8_t block_b = vld1_u8(b + blockidx);
+        uint8x8_t block_res = vadd_u8(block_a, block_b);   
+        vst1_u8(&(res[blockidx]), block_res);
     }
 
-    for (auto i=ARRAY_SIZE - 16*(ARRAY_SIZE/16); i<ARRAY_SIZE; i++)
+    for (auto i=ARRAY_SIZE - BLOCK_SIZE*(ARRAY_SIZE/BLOCK_SIZE); i<ARRAY_SIZE; i++)
         res[i] = a[i] + b[i];
 }
 
