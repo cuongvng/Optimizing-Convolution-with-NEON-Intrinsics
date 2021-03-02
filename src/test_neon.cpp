@@ -6,12 +6,12 @@
 #include "../include/neon2sse/NEON_2_SSE.h"  // Replace this include by the following to test on REAL ARM machines.
 // #include <arm_neon.h>
 
-void neon_add(uint8_t* res, uint8_t* a, uint8_t* b);
-void naive_add(uint8_t* res, uint8_t* a, uint8_t* b); 
+void neon_add(float32_t* res, float32_t* a, float32_t* b);
+void naive_add(float32_t* res, float32_t* a, float32_t* b); 
 
 enum{
     ARRAY_SIZE=100000,
-    BLOCK_SIZE=16,
+    BLOCK_SIZE=4,
     N_CALLS = 10000
 };
 
@@ -34,12 +34,18 @@ int main(){
               << " for " << N_CALLS << " calls." << std::endl;
 
     /*** NEON ***/
-    float32x4_t v1 = { 1.0, 2.0, 3.0, 4.0 }, v2 = { 1.0, 1.0, 1.0, 1.0 };
+    float32_t v1[4] = { 1.0, 2.0, 3.0, 4.0 };
+    float32_t v2[4] = { 1.0, 1.0, 1.0, 1.0 };
+    float32_t z[4];
     
     auto start2 = std::chrono::steady_clock::now();
 
-    for (auto it=0; it<N_CALLS; it++)
-        float32x4_t sum = vaddq_f32(v1, v2);
+    for (auto it=0; it<N_CALLS; it++){
+        float32x4_t v1_ = vld1q_f32(v1);
+        float32x4_t v2_ = vld1q_f32(v2);
+        float32x4_t sum = vaddq_f32(v1_, v2_);
+        vst1q_f32(z, sum);
+    }
     auto end2 = std::chrono::steady_clock::now();
     auto elapsed2 = std::chrono::duration_cast<std::chrono::microseconds>(end2-start2).count();
     
@@ -51,14 +57,14 @@ int main(){
 
 // int main()
 // {   
-//     uint8_t a[ARRAY_SIZE];
-//     uint8_t b[ARRAY_SIZE];
-//     uint8_t res_naive[ARRAY_SIZE];
-//     uint8_t res_neon[ARRAY_SIZE];
+//     float32_t a[ARRAY_SIZE];
+//     float32_t b[ARRAY_SIZE];
+//     float32_t res_naive[ARRAY_SIZE];
+//     float32_t res_neon[ARRAY_SIZE];
     
 //     for (auto i=0; i<ARRAY_SIZE; i++){
-//         a[i] = rand();
-//         b[i] = rand();
+//         a[i] = rand()/float(RAND_MAX);
+//         b[i] = rand()/float(RAND_MAX);
 //     }
 
 //     /*** NAIVE ***/
@@ -93,19 +99,19 @@ int main(){
 
 // }
 
-void neon_add(uint8_t* res, uint8_t* a, uint8_t* b){
+void neon_add(float32_t* res, float32_t* a, float32_t* b){
     for (uint32_t blockidx=0; blockidx<ARRAY_SIZE/BLOCK_SIZE; blockidx+=BLOCK_SIZE){
-        uint8x16_t block_a = vld1q_u8(a + blockidx);
-        uint8x16_t block_b = vld1q_u8(b + blockidx);
-        uint8x16_t block_res = vaddq_u8(block_a, block_b);   
-        vst1q_u8(&(res[blockidx]), block_res);
+        float32x4_t block_a = vld1q_f32(a + blockidx);
+        float32x4_t block_b = vld1q_f32(b + blockidx);
+        float32x4_t block_res = vaddq_f32(block_a, block_b);   
+        vst1q_f32(&(res[blockidx]), block_res);
     }
 
     for (auto i=ARRAY_SIZE - BLOCK_SIZE*(ARRAY_SIZE/BLOCK_SIZE); i<ARRAY_SIZE; i++)
         res[i] = a[i] + b[i];
 }
 
-void naive_add(uint8_t* res, uint8_t* a, uint8_t* b){
+void naive_add(float32_t* res, float32_t* a, float32_t* b){
     for (auto i=0; i<ARRAY_SIZE; i++)
         res[i] = a[i] + b[i];
 }
