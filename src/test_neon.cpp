@@ -6,8 +6,8 @@
 #include "../include/neon2sse/NEON_2_SSE.h"  // Replace this include by the following to test on REAL ARM machines.
 // #include <arm_neon.h>
 
-void neon_add(uint16_t* res, uint16_t* a, uint16_t* b);
-void naive_add(uint16_t* res, uint16_t* a, uint16_t* b); 
+void neon_add(uint8_t* res, uint8_t* a, uint8_t* b);
+void naive_add(uint8_t* res, uint8_t* a, uint8_t* b); 
 
 enum{
     ARRAY_SIZE=100000,
@@ -51,10 +51,10 @@ int main(){
 
 // int main()
 // {   
-//     uint16_t a[ARRAY_SIZE];
-//     uint16_t b[ARRAY_SIZE];
-//     uint16_t res_naive[ARRAY_SIZE];
-//     uint16_t res_neon[ARRAY_SIZE];
+//     uint8_t a[ARRAY_SIZE];
+//     uint8_t b[ARRAY_SIZE];
+//     uint8_t res_naive[ARRAY_SIZE];
+//     uint8_t res_neon[ARRAY_SIZE];
     
 //     for (auto i=0; i<ARRAY_SIZE; i++){
 //         a[i] = rand();
@@ -93,7 +93,7 @@ int main(){
 
 // }
 
-void neon_add(uint16_t* res, uint16_t* a, uint16_t* b){
+void neon_add(uint8_t* res, uint8_t* a, uint8_t* b){
     for (uint32_t blockidx=0; blockidx<ARRAY_SIZE/BLOCK_SIZE; blockidx+=BLOCK_SIZE){
         uint8x16_t block_a = vld1q_u8(a + blockidx);
         uint8x16_t block_b = vld1q_u8(b + blockidx);
@@ -105,7 +105,7 @@ void neon_add(uint16_t* res, uint16_t* a, uint16_t* b){
         res[i] = a[i] + b[i];
 }
 
-void naive_add(uint16_t* res, uint16_t* a, uint16_t* b){
+void naive_add(uint8_t* res, uint8_t* a, uint8_t* b){
     for (auto i=0; i<ARRAY_SIZE; i++)
         res[i] = a[i] + b[i];
 }
