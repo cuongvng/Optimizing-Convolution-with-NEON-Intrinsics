@@ -9,7 +9,10 @@
 void neon_add(uint8_t* res, uint8_t* a, uint8_t* b);
 void naive_add(uint8_t* res, uint8_t* a, uint8_t* b); 
 
-enum{ARRAY_SIZE=1000000};
+enum{
+    ARRAY_SIZE=100000,
+    N_CALLS = 10000
+};
 
 int main()
 {   
@@ -22,9 +25,30 @@ int main()
         a[i] = rand();
         b[i] = rand();
     }
+    
+    /*** NAIVE ***/
+    auto start = std::chrono::steady_clock::now();
+    
+    for (auto it=0; it<N_CALLS; it++)
+        naive_add(res_naive, a, b);
+    
+    auto end = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
+    
+    std::cout << "Naive addition time elapsed: " << elapsed << "(us)"
+              << " for " << N_CALLS << " calls." << std::endl;
 
-    naive_add(res_naive, a, b);
-    neon_add(res_neon, a, b);
+    /*** NEON ***/
+    auto start2 = std::chrono::steady_clock::now();
+
+    for (auto it=0; it<N_CALLS; it++)
+        neon_add(res_neon, a, b);
+    
+    auto end2 = std::chrono::steady_clock::now();
+    auto elapsed2 = std::chrono::duration_cast<std::chrono::microseconds>(end2-start2).count();
+    
+    std::cout << "NEON addition time elapsed: " << elapsed2 << "(us)" 
+              << " for " << N_CALLS << " calls." << std::endl;
 
     // // Check equality
     if (std::equal(std::begin(res_naive), std::end(res_naive), std::begin(res_neon)))
@@ -35,8 +59,6 @@ int main()
 }
 
 void neon_add(uint8_t* res, uint8_t* a, uint8_t* b){
-    auto start = std::chrono::steady_clock::now();
-
     for (uint32_t block16_idx=0; block16_idx<ARRAY_SIZE/16; block16_idx+=16){
         uint8x16_t block_a = vld1q_u8(a + block16_idx);
         uint8x16_t block_b = vld1q_u8(b + block16_idx);
@@ -46,23 +68,11 @@ void neon_add(uint8_t* res, uint8_t* a, uint8_t* b){
 
     for (auto i=ARRAY_SIZE - 16*(ARRAY_SIZE/16); i<ARRAY_SIZE; i++)
         res[i] = a[i] + b[i];
-    
-    auto end = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
-    
-    std::cout << "NEON addition time elapsed: " << elapsed << "(us)" << std::endl;
 }
 
 void naive_add(uint8_t* res, uint8_t* a, uint8_t* b){
-    auto start = std::chrono::steady_clock::now();
-
     for (auto i=0; i<ARRAY_SIZE; i++)
         res[i] = a[i] + b[i];
-
-    auto end = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
-    
-    std::cout << "Naive addition time elapsed: " << elapsed << "(us)" << std::endl;
 }
 
 #pragma GCC pop
