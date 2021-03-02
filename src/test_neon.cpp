@@ -15,24 +15,18 @@ enum{
     N_CALLS = 10000
 };
 
-int main()
-{   
-    uint16_t a[ARRAY_SIZE];
-    uint16_t b[ARRAY_SIZE];
-    uint16_t res_naive[ARRAY_SIZE];
-    uint16_t res_neon[ARRAY_SIZE];
-    
-    for (auto i=0; i<ARRAY_SIZE; i++){
-        a[i] = rand();
-        b[i] = rand();
-    }
+int main(){
 
+    float32_t a1[4] = { 1.0, 2.0, 3.0, 4.0 };
+    float32_t a2[4] = { 1.0, 1.0, 1.0, 1.0 };
+    float32_t s[4] = {0,0,0,0};
     /*** NAIVE ***/
     auto start = std::chrono::steady_clock::now();
     
-    for (auto it=0; it<N_CALLS; it++)
-        naive_add(res_naive, a, b);
-    
+    for (auto it=0; it<N_CALLS; it++){
+        for (auto i=0; i<4; i++)
+            s[i] = a1[i] + a2[i];
+    }
     auto end = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
     
@@ -40,24 +34,64 @@ int main()
               << " for " << N_CALLS << " calls." << std::endl;
 
     /*** NEON ***/
+    float32x4_t v1 = { 1.0, 2.0, 3.0, 4.0 }, v2 = { 1.0, 1.0, 1.0, 1.0 };
+    
     auto start2 = std::chrono::steady_clock::now();
 
     for (auto it=0; it<N_CALLS; it++)
-        neon_add(res_neon, a, b);
-    
+        float32x4_t sum = vaddq_f32(v1, v2);
     auto end2 = std::chrono::steady_clock::now();
     auto elapsed2 = std::chrono::duration_cast<std::chrono::microseconds>(end2-start2).count();
     
     std::cout << "NEON addition time elapsed: " << elapsed2 << "(us)" 
               << " for " << N_CALLS << " calls." << std::endl;
 
-    // // Check equality
-    if (std::equal(std::begin(res_naive), std::end(res_naive), std::begin(res_neon)))
-        std::cout << "Arrays are equal.\n";
-    else
-        std::cout << "Arrays are NOT equal.\n";
-
+    return 0;
 }
+
+// int main()
+// {   
+//     uint16_t a[ARRAY_SIZE];
+//     uint16_t b[ARRAY_SIZE];
+//     uint16_t res_naive[ARRAY_SIZE];
+//     uint16_t res_neon[ARRAY_SIZE];
+    
+//     for (auto i=0; i<ARRAY_SIZE; i++){
+//         a[i] = rand();
+//         b[i] = rand();
+//     }
+
+//     /*** NAIVE ***/
+//     auto start = std::chrono::steady_clock::now();
+    
+//     for (auto it=0; it<N_CALLS; it++)
+//         naive_add(res_naive, a, b);
+    
+//     auto end = std::chrono::steady_clock::now();
+//     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
+    
+//     std::cout << "Naive addition time elapsed: " << elapsed << "(us)"
+//               << " for " << N_CALLS << " calls." << std::endl;
+
+//     /*** NEON ***/
+//     auto start2 = std::chrono::steady_clock::now();
+
+//     for (auto it=0; it<N_CALLS; it++)
+//         neon_add(res_neon, a, b);
+    
+//     auto end2 = std::chrono::steady_clock::now();
+//     auto elapsed2 = std::chrono::duration_cast<std::chrono::microseconds>(end2-start2).count();
+    
+//     std::cout << "NEON addition time elapsed: " << elapsed2 << "(us)" 
+//               << " for " << N_CALLS << " calls." << std::endl;
+
+//     // // Check equality
+//     if (std::equal(std::begin(res_naive), std::end(res_naive), std::begin(res_neon)))
+//         std::cout << "Arrays are equal.\n";
+//     else
+//         std::cout << "Arrays are NOT equal.\n";
+
+// }
 
 void neon_add(uint16_t* res, uint16_t* a, uint16_t* b){
     for (uint32_t blockidx=0; blockidx<ARRAY_SIZE/BLOCK_SIZE; blockidx+=BLOCK_SIZE){
