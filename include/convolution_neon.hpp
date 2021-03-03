@@ -41,25 +41,36 @@ float32_t** simply_convolve_neon(float32_t** input, float32_t** kernel,
 
             for (uint32_t block4_idx=0; block4_idx<N_KERNEL_PIX/4; block4_idx++){
                 // Load each pair of 4-element blocks of input and kernel into ARM registers
-                float32x4_t input_reg = vld1q_f32(input_window + 4*block4_idx);
-                float32x4_t kernel_reg = vld1q_f32(kernel_data + 4*block4_idx);
-
+                // float32x4_t input_reg = vld1q_f32(input_window + 4*block4_idx);
+                // float32x4_t kernel_reg = vld1q_f32(kernel_data + 4*block4_idx);
+                float32x4_t input_reg = {
+                    input_window[4*block4_idx],
+                    input_window[4*block4_idx+1],
+                    input_window[4*block4_idx+2],
+                    input_window[4*block4_idx+3]
+                };
+                float32x4_t kernel_reg = {
+                    kernel_data[4*block4_idx],
+                    kernel_data[4*block4_idx+1],
+                    kernel_data[4*block4_idx+2],
+                    kernel_data[4*block4_idx+3]
+                };
                 // Perform element-wise multiplication on the registers
                 float32x4_t ew_mul_reg = vmulq_f32(input_reg, kernel_reg);
 
-                // Load `ew_mul_reg` result from the registers back to the 4-element array `ew_mul_mem` on memory
-                float32_t ew_mul_mem[4];
-                vst1q_f32(ew_mul_mem, ew_mul_reg);
+                // // Load `ew_mul_reg` result from the registers back to the 4-element array `ew_mul_mem` on memory
+                // float32_t ew_mul_mem[4];
+                // vst1q_f32(ew_mul_mem, ew_mul_reg);
 
                 // Accumulate the convolution results on the current block pairs
-                conv += ew_mul_mem[0] + ew_mul_mem[1] + ew_mul_mem[2] + ew_mul_mem[3];
+                conv += ew_mul_reg[0] + ew_mul_reg[1] + ew_mul_reg[2] + ew_mul_reg[3];
             }
 
             // Handle the rest (N_KERNEL_PIX % 4) elements separately
             uint8_t n_rest = N_KERNEL_PIX % 4;
             if (n_rest > 0)
                 for (uint8_t l=0; l<n_rest; l++)
-                    conv += input_window [N_KERNEL_PIX - N_KERNEL_PIX%4 +l] * kernel_data[N_KERNEL_PIX - N_KERNEL_PIX%4 +l];
+                    conv += input_window[N_KERNEL_PIX - N_KERNEL_PIX%4 +l] * kernel_data[N_KERNEL_PIX - N_KERNEL_PIX%4 +l];
 
             result[i][j] = conv;
         }
