@@ -1,47 +1,41 @@
 #include <iostream>
-#include <vector>
 #include "../include/neon2sse/NEON_2_SSE.h"  // Replace this include by the following to test on REAL ARM machines.
 // #include <arm_neon.h>
 #include <chrono>
 
-// TODO: Replace with pointers, chrono timer, compare with small functions
-std::vector<std::vector<float32_t>> simply_convolve_neon(std::vector<std::vector<float32_t>> input, std::vector<std::vector<float32_t>> kernel){
+float32_t** simply_convolve_neon(float32_t** input, float32_t** kernel,
+                                 const uint32_t input_height, const uint32_t input_width,
+                                 const uint32_t kernel_height, const uint32_t kernel_width){
     // Simple single-channel convolution
     auto start = std::chrono::steady_clock::now();
 
-    uint32_t input_height = input.size();
-    uint32_t input_width = input[0].size();
-
     // Flatten the kernel, row-major
-    const uint32_t KERNEL_HEIGHT = kernel.size();
-    const uint32_t KERNEL_WIDTH = kernel[0].size();
-    const uint32_t N_KERNEL_PIX = kernel.size() * kernel[0].size();
+    const uint32_t N_KERNEL_PIX = kernel_height * kernel_width;
 
     float32_t kernel_data[N_KERNEL_PIX];
-    for (uint8_t r=0; r<KERNEL_HEIGHT; r++){
-        float32_t* kernel_row = kernel[r].data();
-        for (uint8_t c=0; c<KERNEL_WIDTH; c++){
-            kernel_data[r*KERNEL_WIDTH + c] = *(kernel_row+c);
+    for (uint8_t r=0; r<kernel_height; r++){
+        for (uint8_t c=0; c<kernel_width; c++){
+            kernel_data[r*kernel_width + c] = kernel[r][c];
         }
     }
 
     // Get output shape
-    uint32_t output_height = input_height - KERNEL_HEIGHT + 1;
-    uint32_t output_width = input_width - KERNEL_WIDTH + 1;
-    std::vector<std::vector<float32_t>> result;
+    uint32_t output_height = input_height - kernel_height + 1;
+    uint32_t output_width = input_width - kernel_width + 1;
+    float32_t** result = new float32_t* [output_height];
 
     // Array to store the data of sliding window on the input
     float32_t input_window[N_KERNEL_PIX];
 
     for (uint32_t i=0; i<output_height; i++){
-        std::vector<float32_t> res_row;
+        result[i] = new float32_t [output_width];
         for (uint32_t j=0; j<output_width; j++){
             float32_t conv = 0;
 
             // Get data on input window
-            for (uint32_t kh=0; kh<KERNEL_HEIGHT; kh++)
-                for(uint32_t kw=0; kw<KERNEL_WIDTH; kw++)
-                    input_window[kh*KERNEL_WIDTH + kw] = input[i+kh][j+kw];
+            for (uint32_t kh=0; kh<kernel_height; kh++)
+                for(uint32_t kw=0; kw<kernel_width; kw++)
+                    input_window[kh*kernel_width + kw] = input[i+kh][j+kw];
 
             /**** Apply NEON Intrinsics ****/
 
@@ -58,8 +52,7 @@ std::vector<std::vector<float32_t>> simply_convolve_neon(std::vector<std::vector
                 vst1q_f32(ew_mul_mem, ew_mul_reg);
 
                 // Accumulate the convolution results on the current block pairs
-                for (uint8_t m=0; m<4; m++)
-                    conv += ew_mul_mem[];
+                conv += ew_mul_mem[0] + ew_mul_mem[1] + ew_mul_mem[2] + ew_mul_mem[3];
             }
 
             // Handle the rest (N_KERNEL_PIX % 4) elements separately
@@ -68,9 +61,8 @@ std::vector<std::vector<float32_t>> simply_convolve_neon(std::vector<std::vector
                 for (uint8_t l=0; l<n_rest; l++)
                     conv += input_window [N_KERNEL_PIX - N_KERNEL_PIX%4 +l] * kernel_data[N_KERNEL_PIX - N_KERNEL_PIX%4 +l];
 
-            res_row.push_back(conv);
+            result[i][j] = conv;
         }
-        result.push_back(res_row);
     }
 
     auto end = std::chrono::steady_clock::now();
