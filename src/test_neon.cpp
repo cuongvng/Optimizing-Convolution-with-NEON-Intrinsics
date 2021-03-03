@@ -7,7 +7,7 @@
 // #include <arm_neon.h>
 
 void neon_add(float32_t* res, float32_t* a, float32_t* b);
-void naive_add(float32_t* res, float32_t* a, float32_t* b); 
+void scalar_add(float32_t* res, float32_t* a, float32_t* b); 
 
 enum{
     ARRAY_SIZE=100000,
@@ -20,7 +20,7 @@ int main(){
     float32_t a1[4] = { 1.0, 2.0, 3.0, 4.0 };
     float32_t a2[4] = { 1.0, 1.0, 1.0, 1.0 };
     float32_t s[4] = {0,0,0,0};
-    /*** NAIVE ***/
+    /*** SCALAR ***/
     auto start = std::chrono::steady_clock::now();
     
     for (auto it=0; it<N_CALLS; it++){
@@ -30,7 +30,7 @@ int main(){
     auto end = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
     
-    std::cout << "Naive addition time elapsed: " << elapsed << "(us)"
+    std::cout << "Scalar: " << elapsed << "(us)"
               << " for " << N_CALLS << " calls." << std::endl;
 
     /*** NEON ***/
@@ -41,15 +41,15 @@ int main(){
     auto start2 = std::chrono::steady_clock::now();
 
     for (auto it=0; it<N_CALLS; it++){
-        float32x4_t v1_ = vld1q_f32(v1);
-        float32x4_t v2_ = vld1q_f32(v2);
+        float32x4_t v1_ = {v1[0], v1[1], v1[2], v1[3]}; //vld1q_f32(v1);
+        float32x4_t v2_ = {v2[0], v2[1], v2[2], v2[3]}; //vld1q_f32(v2);
         float32x4_t sum = vaddq_f32(v1_, v2_);
         vst1q_f32(z, sum);
     }
     auto end2 = std::chrono::steady_clock::now();
     auto elapsed2 = std::chrono::duration_cast<std::chrono::microseconds>(end2-start2).count();
     
-    std::cout << "NEON addition time elapsed: " << elapsed2 << "(us)" 
+    std::cout << "NEON: " << elapsed2 << "(us)" 
               << " for " << N_CALLS << " calls." << std::endl;
 
     return 0;
@@ -59,7 +59,7 @@ int main(){
 // {   
 //     float32_t a[ARRAY_SIZE];
 //     float32_t b[ARRAY_SIZE];
-//     float32_t res_naive[ARRAY_SIZE];
+//     float32_t res_scalar[ARRAY_SIZE];
 //     float32_t res_neon[ARRAY_SIZE];
     
 //     for (auto i=0; i<ARRAY_SIZE; i++){
@@ -67,16 +67,16 @@ int main(){
 //         b[i] = rand()/float(RAND_MAX);
 //     }
 
-//     /*** NAIVE ***/
+//     /*** SCALAR ***/
 //     auto start = std::chrono::steady_clock::now();
     
 //     for (auto it=0; it<N_CALLS; it++)
-//         naive_add(res_naive, a, b);
+//         scalar_add(res_scalar, a, b);
     
 //     auto end = std::chrono::steady_clock::now();
 //     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
     
-//     std::cout << "Naive addition time elapsed: " << elapsed << "(us)"
+//     std::cout << "Scalar addition time elapsed: " << elapsed << "(us)"
 //               << " for " << N_CALLS << " calls." << std::endl;
 
 //     /*** NEON ***/
@@ -92,7 +92,7 @@ int main(){
 //               << " for " << N_CALLS << " calls." << std::endl;
 
 //     // // Check equality
-//     if (std::equal(std::begin(res_naive), std::end(res_naive), std::begin(res_neon)))
+//     if (std::equal(std::begin(res_scalar), std::end(res_scalar), std::begin(res_neon)))
 //         std::cout << "Arrays are equal.\n";
 //     else
 //         std::cout << "Arrays are NOT equal.\n";
@@ -111,7 +111,7 @@ void neon_add(float32_t* res, float32_t* a, float32_t* b){
         res[i] = a[i] + b[i];
 }
 
-void naive_add(float32_t* res, float32_t* a, float32_t* b){
+void scalar_add(float32_t* res, float32_t* a, float32_t* b){
     for (auto i=0; i<ARRAY_SIZE; i++)
         res[i] = a[i] + b[i];
 }
