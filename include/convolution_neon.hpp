@@ -2,12 +2,12 @@
 #include <vector>
 #include "../include/neon2sse/NEON_2_SSE.h"  // Replace this include by the following to test on REAL ARM machines.
 // #include <arm_neon.h>
-#include <time.h>
+#include <chrono>
 
-
+// TODO: Replace with pointers, chrono timer, compare with small functions
 std::vector<std::vector<float32_t>> simply_convolve_neon(std::vector<std::vector<float32_t>> input, std::vector<std::vector<float32_t>> kernel){
     // Simple single-channel convolution
-    clock_t start = clock();
+    auto start = std::chrono::steady_clock::now();
 
     uint32_t input_height = input.size();
     uint32_t input_width = input[0].size();
@@ -59,7 +59,7 @@ std::vector<std::vector<float32_t>> simply_convolve_neon(std::vector<std::vector
 
                 // Accumulate the convolution results on the current block pairs
                 for (uint8_t m=0; m<4; m++)
-                    conv += ew_mul_mem[m];
+                    conv += ew_mul_mem[];
             }
 
             // Handle the rest (N_KERNEL_PIX % 4) elements separately
@@ -73,8 +73,9 @@ std::vector<std::vector<float32_t>> simply_convolve_neon(std::vector<std::vector
         result.push_back(res_row);
     }
 
-    clock_t duration = clock() - start;
-    std::cout << "NEON convolution: time consumed = " << float(duration)*1e6/CLOCKS_PER_SEC << " us" << std::endl;
+    auto end = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
+    std::cout << "NEON convolution:  " << elapsed << " us" << std::endl;
     
     return result;
 }

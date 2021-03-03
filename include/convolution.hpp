@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include <time.h>
+#include <chrono>
 
 // Simple convolution function.
 std::vector<std::vector<float32_t>> simply_convolve(
@@ -9,7 +9,7 @@ std::vector<std::vector<float32_t>> simply_convolve(
     // Input shape (input_height, input_width)
     // Kernel shape (kernel_height, kernel_width)
 
-    clock_t start = clock();
+    auto start = std::chrono::steady_clock::now();
 
     int input_height = input.size();
     int input_width = input[0].size();
@@ -38,8 +38,9 @@ std::vector<std::vector<float32_t>> simply_convolve(
         }
     }
 
-    clock_t duration = clock() - start;
-    std::cout << "None-NEON convolution: time consumed = " << float(duration)*1e6/CLOCKS_PER_SEC << " us" << std::endl;
+    auto end = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
+    std::cout << "Scalar convolution: " << elapsed << " us" << std::endl;
 
     return output;
 }
