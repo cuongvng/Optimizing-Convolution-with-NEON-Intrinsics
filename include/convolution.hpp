@@ -1,13 +1,10 @@
 #include <iostream>
-#include <chrono>
 
 // Simple convolution function.
 float32_t** simply_convolve_scalar(
     float32_t** input, float32_t** kernel,
     const uint32_t input_height, const uint32_t input_width,
     const uint32_t kernel_height, const uint32_t kernel_width){  
-
-    auto start = std::chrono::steady_clock::now();
 
     uint32_t output_height = input_height - kernel_height + 1;
     uint32_t output_width = input_width - kernel_width + 1;
@@ -29,11 +26,6 @@ float32_t** simply_convolve_scalar(
             conv = 0;
         }
     }
-
-    auto end = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
-    std::cout << "Scalar convolution: " << elapsed << " us" << std::endl;
-
     return output;
 }
 

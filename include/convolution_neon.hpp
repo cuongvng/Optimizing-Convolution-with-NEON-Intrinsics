@@ -1,13 +1,11 @@
 #include <iostream>
 // #include "../include/neon2sse/NEON_2_SSE.h"  // Replace this include by the following to test on REAL ARM machines.
 #include <arm_neon.h>
-#include <chrono>
 
 float32_t** simply_convolve_neon(float32_t** input, float32_t** kernel,
                                  const uint32_t input_height, const uint32_t input_width,
                                  const uint32_t kernel_height, const uint32_t kernel_width){
     // Simple single-channel convolution
-    auto start = std::chrono::steady_clock::now();
 
     // Flatten the kernel, row-major
     const uint32_t N_KERNEL_PIX = kernel_height * kernel_width;
@@ -75,10 +73,6 @@ float32_t** simply_convolve_neon(float32_t** input, float32_t** kernel,
             result[i][j] = conv;
         }
     }
-
-    auto end = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
-    std::cout << "NEON convolution:  " << elapsed << " us" << std::endl;
     
     return result;
 }
