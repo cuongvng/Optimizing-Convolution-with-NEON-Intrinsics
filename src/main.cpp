@@ -136,12 +136,23 @@ void test2(){
     neon[o] = new float32_t [output_width];
   }
 
+  auto start = std::chrono::steady_clock::now();
   simply_convolve_scalar(
     scalar, input, kernel, input_height, input_width,
     kernel_height, kernel_width);
+  auto end = std::chrono::steady_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
+  
+  std::cout << "Scalar: " << elapsed << "(us)" << std::endl;
+
+  auto start2 = std::chrono::steady_clock::now();
   simply_convolve_neon(
     neon, input, kernel, input_height, input_width,
     kernel_height, kernel_width);  
+  auto end2 = std::chrono::steady_clock::now();
+  auto elapsed2 = std::chrono::duration_cast<std::chrono::microseconds>(end2-start2).count();
+  
+  std::cout << "NEON: " << elapsed2 << "(us)" << std::endl;
 
   delete[] input;
   delete[] kernel;
