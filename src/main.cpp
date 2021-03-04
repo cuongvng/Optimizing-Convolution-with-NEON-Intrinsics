@@ -34,9 +34,9 @@ void test1(){
     {71,72,73,71}, 
     {74,75,76,74}});
   std::vector<std::vector<float32_t>> kernel_({
-    {65,66,67}, 
-    {68,69,70}, 
-    {71,72,73}});
+    {65,66}, 
+    {68,69}}
+    );
 
   float32_t** input = new float32_t* [input_height];
   float32_t** kernel = new float32_t* [kernel_height];
