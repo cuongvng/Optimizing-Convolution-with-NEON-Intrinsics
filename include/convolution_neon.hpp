@@ -1,6 +1,6 @@
 #include <iostream>
-#include "../include/neon2sse/NEON_2_SSE.h"  // Replace this include by the following to test on REAL ARM machines.
-// #include <arm_neon.h>
+// #include "../include/neon2sse/NEON_2_SSE.h"  // Replace this include by the following to test on REAL ARM machines.
+#include <arm_neon.h>
 #include <chrono>
 
 float32_t** simply_convolve_neon(float32_t** input, float32_t** kernel,
