@@ -48,11 +48,18 @@ void test1(){
 
   uint32_t output_height = input_height - kernel_height + 1;
   uint32_t output_width = input_width - kernel_width + 1;
+  
+  float32_t** scalar = new float32_t* [output_height];
+  float32_t** neon = new float32_t* [output_height];
+  for (auto o=0; o<output_height; o++){
+    scalar[o] = new float32_t [output_width];
+    neon[o] = new float32_t [output_width];
+  }
 
   auto start = std::chrono::steady_clock::now();
   for (auto it=0; it<N_CALLS; it++){
-    float32_t** scalar = simply_convolve_scalar(
-      input, kernel, input_height, input_width,
+    simply_convolve_scalar(
+      scalar, input, kernel, input_height, input_width,
       kernel_height, kernel_width);
   }
   auto end = std::chrono::steady_clock::now();
@@ -70,9 +77,9 @@ void test1(){
   auto start2 = std::chrono::steady_clock::now();
 
   for (auto it=0; it<N_CALLS; it++){
-  float32_t** neon = simply_convolve_neon(
-    input, kernel, input_height, input_width,
-    kernel_height, kernel_width);  
+    simply_convolve_neon(
+      neon, input, kernel, input_height, input_width,
+      kernel_height, kernel_width);  
   }
   auto end2 = std::chrono::steady_clock::now();
   auto elapsed2 = std::chrono::duration_cast<std::chrono::microseconds>(end2-start2).count();
@@ -90,7 +97,6 @@ void test1(){
   // Deallocate
   delete[] input;
   delete[] kernel;
-
   for (auto o=0; o<output_height; o++){
     delete[] neon[o];
     delete[] scalar[o];
@@ -112,6 +118,8 @@ void test2(){
 
   float32_t** input = new float32_t* [input_height];
   float32_t** kernel = new float32_t* [kernel_height];
+  float32_t** scalar = new float32_t* [output_height];
+  float32_t** neon = new float32_t* [output_height];
 
   for (int i=0; i<input_height; i++){
     std::vector<float32_t> r(input_width);
@@ -123,11 +131,16 @@ void test2(){
     kernel[k] = r.data();
   }
 
-  float32_t** scalar = simply_convolve_scalar(
-    input, kernel, input_height, input_width,
+  for (int o=0; o<output_height; o++){
+    scalar[o] = new float32_t [output_width];
+    neon[o] = new float32_t [output_width];
+  }
+
+  simply_convolve_scalar(
+    scalar, input, kernel, input_height, input_width,
     kernel_height, kernel_width);
-  float32_t** neon = simply_convolve_neon(
-    input, kernel, input_height, input_width,
+  simply_convolve_neon(
+    neon, input, kernel, input_height, input_width,
     kernel_height, kernel_width);  
 
   delete[] input;

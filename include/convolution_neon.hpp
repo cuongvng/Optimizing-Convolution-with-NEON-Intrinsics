@@ -2,9 +2,10 @@
 // #include "../include/neon2sse/NEON_2_SSE.h"  // Replace this include by the following to test on REAL ARM machines.
 #include <arm_neon.h>
 
-float32_t** simply_convolve_neon(float32_t** input, float32_t** kernel,
-                                 const uint32_t input_height, const uint32_t input_width,
-                                 const uint32_t kernel_height, const uint32_t kernel_width){
+void simply_convolve_neon(
+    float32_t** output, float32_t** input, float32_t** kernel,
+    const uint32_t input_height, const uint32_t input_width,
+    const uint32_t kernel_height, const uint32_t kernel_width){
     // Simple single-channel convolution
 
     // Flatten the kernel, row-major
@@ -20,13 +21,11 @@ float32_t** simply_convolve_neon(float32_t** input, float32_t** kernel,
     // Get output shape
     uint32_t output_height = input_height - kernel_height + 1;
     uint32_t output_width = input_width - kernel_width + 1;
-    float32_t** result = new float32_t* [output_height];
 
     // Array to store the data of sliding window on the input
     float32_t input_window[N_KERNEL_PIX];
 
     for (uint32_t i=0; i<output_height; i++){
-        result[i] = new float32_t [output_width];
         for (uint32_t j=0; j<output_width; j++){
             float32_t conv = 0;
 
@@ -56,11 +55,11 @@ float32_t** simply_convolve_neon(float32_t** input, float32_t** kernel,
                 // Perform element-wise multiplication on the registers
                 float32x4_t ew_mul_reg = vmulq_f32(input_reg, kernel_reg);
 
-                // // Load `ew_mul_reg` result from the registers back to the 4-element array `ew_mul_mem` on memory
+                // // Load `ew_mul_reg` output from the registers back to the 4-element array `ew_mul_mem` on memory
                 // float32_t ew_mul_mem[4];
                 // vst1q_f32(ew_mul_mem, ew_mul_reg);
 
-                // Accumulate the convolution results on the current block pairs
+                // Accumulate the convolution outputs on the current block pairs
                 conv += ew_mul_reg[0] + ew_mul_reg[1] + ew_mul_reg[2] + ew_mul_reg[3];
             }
 
@@ -70,9 +69,7 @@ float32_t** simply_convolve_neon(float32_t** input, float32_t** kernel,
                 for (uint8_t l=0; l<n_rest; l++)
                     conv += input_window[N_KERNEL_PIX - N_KERNEL_PIX%4 +l] * kernel_data[N_KERNEL_PIX - N_KERNEL_PIX%4 +l];
 
-            result[i][j] = conv;
+            output[i][j] = conv;
         }
     }
-    
-    return result;
 }

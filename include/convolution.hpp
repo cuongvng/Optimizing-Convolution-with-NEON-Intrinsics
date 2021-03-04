@@ -1,21 +1,18 @@
 #include <iostream>
 
 // Simple convolution function.
-float32_t** simply_convolve_scalar(
-    float32_t** input, float32_t** kernel,
+void simply_convolve_scalar(
+    float32_t** output, float32_t** input, float32_t** kernel,
     const uint32_t input_height, const uint32_t input_width,
     const uint32_t kernel_height, const uint32_t kernel_width){  
 
     uint32_t output_height = input_height - kernel_height + 1;
     uint32_t output_width = input_width - kernel_width + 1;
 
-    float32_t** output = new float32_t* [output_height];
-
     float32_t conv = 0;
 
 	// Fill output matrix: rows and columns are i and j respectively
     for (int i=0; i<output_height; i++){
-        output[i] = new float32_t [output_width];
         for (int j=0; j<output_width; j++){
 
             for (int k=0; k<kernel_height; k++)
@@ -26,7 +23,6 @@ float32_t** simply_convolve_scalar(
             conv = 0;
         }
     }
-    return output;
 }
 
 // // Single-channel 3D convolution function.
